@@ -5,6 +5,7 @@ const bodyParser = require('body-parser');
 const async = require('asyncawait/async');
 const await = require('asyncawait/await');
 const httpErrors = require('http-errors');
+const cors = require('cors');
 const config = require('./config.js');
 const app = express();
 
@@ -59,7 +60,7 @@ app.get("/sendnotif/event",function(req,res){
 
 })
 
-app.get("/sendnotif/custom",async(function(req,res,next){
+app.get("/sendnotif/custom",async(function(req,res){
   const payload = {
     data: {
       "heading": req.body.headingt,
