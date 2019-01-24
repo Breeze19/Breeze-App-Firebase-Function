@@ -86,7 +86,7 @@ app.get("/sendnotif/custom",async(function(req,res){
   const allTokens = await(admin.database().ref("/data/fcm/tokens"))
   const tokens = getTokens(allTokens)
   if(tokens != null){ 
-    await(sendNotificationInBatched(tokens,Obkect.keys(allTokens.val()),req.body.heading,req.body.content,"custom",))
+    await(sendNotificationInBatched(tokens,Obkect.keys(allTokens.val()),req.body.heading,req.body.content,"custom"))
     res.status(203).json({
       "response": "Notification sent"
     })
