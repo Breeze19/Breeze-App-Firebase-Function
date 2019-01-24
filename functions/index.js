@@ -43,6 +43,21 @@ function cleanup(response,tokens,keys){
   return admin.database().ref().update(tokensToRemove)
 }
 
+async(function sendNotificationInBatches(tokens,keys,heading,content,type){
+  const payload = {
+    "heading": heading,
+    "content": content,
+    "type": type
+  }
+  for(var i=0;i<len(tokens)/30;i++){
+    const response = await(admin.messagin().sendToDevice(tokens.slice((i*30)+1,((i+1)*30)+1)))
+    if(response.error == null){
+      console.log(response.successCount)
+    }
+    await(cleanup(response,tokens,keys.slize((i*30)+1,((i+1)*30)+1)))
+  }
+})
+
 app.use(function(req,res,next){
   if(req.body.api_key == config.API_KEY){
     next()
@@ -63,7 +78,7 @@ app.get("/sendnotif/event",function(req,res){
 app.get("/sendnotif/custom",async(function(req,res){
   const payload = {
     data: {
-      "heading": req.body.headingt,
+      "heading": req.body.heading,
       "content": req.body.content,
       "type": "custom"
     }
@@ -71,8 +86,7 @@ app.get("/sendnotif/custom",async(function(req,res){
   const allTokens = await(admin.database().ref("/data/fcm/tokens"))
   const tokens = getTokens(allTokens)
   if(tokens != null){ 
-    const response = await(admin.messaging().sendToDevice(tokens,payload))  
-    await(cleanup(response,tokens,Object.keys(allTokens.val())))
+    await(sendNotificationInBatched(tokens,Obkect.keys(allTokens.val()),req.body.heading,req.body.content,"custom",))
     res.status(203).json({
       "response": "Notification sent"
     })
@@ -82,7 +96,6 @@ app.get("/sendnotif/custom",async(function(req,res){
       "response": "No tokens present"
     })
   }
-  
 }))
 
 app.use(function(req,res,next){
