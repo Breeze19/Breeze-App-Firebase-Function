@@ -64,7 +64,8 @@ app.get("/sendnotif/custom",async(function(req,res){
   const payload = {
     data: {
       "heading": req.body.headingt,
-      "content": req.body.content
+      "content": req.body.content,
+      "type": "custom"
     }
   }
   const allTokens = await(admin.database().ref("/data/fcm/tokens"))
