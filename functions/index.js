@@ -43,19 +43,12 @@ function cleanup(response,tokens,keys){
   return admin.database().ref().update(tokensToRemove)
 }
 
-async(function sendNotificationInBatches(tokens,keys,heading,content,type){
-  const payload = {
-    "heading": heading,
-    "content": content,
-    "type": type
+async(function sendNotification(tokens,keys,payload){
+  const response = await(admin.messagin().sendToDevice(tokens,payload))
+  if(response.error == null){
+    console.log(response.successCount)
   }
-  for(var i=0;i<len(tokens)/30;i++){
-    const response = await(admin.messagin().sendToDevice(tokens.slice((i*30)+1,((i+1)*30)+1)))
-    if(response.error == null){
-      console.log(response.successCount)
-    }
-    await(cleanup(response,tokens,keys.slize((i*30)+1,((i+1)*30)+1)))
-  }
+  await(cleanup(response,tokens,keys))
 })
 
 app.use(function(req,res,next){
@@ -67,26 +60,39 @@ app.use(function(req,res,next){
   }
 })
 
-app.get("/sendnotif/register",function(req,res){
-  
-})
-
-app.get("/sendnotif/event",function(req,res){
-
-})
+app.get("/sendnotif/play",async(function(req,res){
+  const allTokens = await(admin.database().ref("/data/fcm/tokens"))
+  const tokens = getTokens(allTokens)
+  if(tokens != null){
+    const payload = {
+      data: {
+        "type": "play"
+      }
+    }
+    await(sendNotification(tokens,Object.keys(allTokens.val()),payload))
+    res.status(203).json({
+      "response": "Notification sent"
+    })
+  }
+  else{
+    res.status(500).json({
+      "response": "No tokens present"
+    })
+  }
+}))
 
 app.get("/sendnotif/custom",async(function(req,res){
-  const payload = {
-    data: {
-      "heading": req.body.heading,
-      "content": req.body.content,
-      "type": "custom"
-    }
-  }
   const allTokens = await(admin.database().ref("/data/fcm/tokens"))
   const tokens = getTokens(allTokens)
   if(tokens != null){ 
-    await(sendNotificationInBatched(tokens,Obkect.keys(allTokens.val()),req.body.heading,req.body.content,"custom"))
+    const payload = {
+      data: {
+        "heading": req.body.heading,
+        "content": req.body.content,
+        "type": "custom"  
+      }
+    }
+    await(sendNotification(tokens,Obkect.keys(allTokens.val()),payload))
     res.status(203).json({
       "response": "Notification sent"
     })
