@@ -61,6 +61,7 @@ app.use(function(req,res,next){
 })
 
 app.get("/sendnotif/play",async(function(req,res){
+  console.log("Here")
   const allTokens = await(admin.database().ref("/data/fcm/tokens"))
   const tokens = getTokens(allTokens)
   if(tokens != null){
