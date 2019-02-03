@@ -4,7 +4,12 @@ var async = require('asyncawait/async')
 var await = require('asyncawait/await')
 const config = require('./config.js')
 const cors = require('cors')({origin: true});
-admin.initializeApp()
+const serviceAccount = require('./serviceAccount.json');
+admin.initializeApp({
+  credential: admin.credential.cert(serviceAccount),
+  databaseURL: "https://breeze19-app-backend.firebaseio.com"
+}
+)
 
 exports.api = functions.https.onRequest(async ((req,res) => {
   cors(req, res, () => {});
