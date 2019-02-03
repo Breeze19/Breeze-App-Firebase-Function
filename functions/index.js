@@ -7,7 +7,7 @@ const cors = require('cors')({origin: true});
 const serviceAccount = require('./serviceAccount.json');
 admin.initializeApp({
   credential: admin.credential.cert(serviceAccount),
-  databaseURL: "https://breeze19-app-backend.firebaseio.com"
+  databaseURL: config.DATABASE_URL
 }
 )
 
