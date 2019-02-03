@@ -1,109 +1,50 @@
 const functions = require('firebase-functions');
 const admin = require('firebase-admin');
-const express = require('express')
-const bodyParser = require('body-parser');
-const async = require('asyncawait/async');
-const await = require('asyncawait/await');
-const httpErrors = require('http-errors');
-const cors = require('cors');
-const config = require('./config.js');
-const app = express();
+var async = require('asyncawait/async')
+var await = require('asyncawait/await')
+const config = require('./config.js')
+admin.initializeApp()
 
-admin.initializeApp();
-
-app.use(bodyParser.urlencoded({extended: true}))
-app.use(bodyParser.json())
-app.use(cors())
-
-function getTokens(snapshot){
-    const data = snapshot.val()
+exports.api = functions.https.onRequest(async ((req,res) => {
+  if(req.body.api_key == config.API_KEY){
+  const payload = {
+    data: {
+      "heading": req.body.heading+"",
+      "content": req.body.content+""
+    }
+  }
+  const allTokens = await (admin.database().ref('/data/fcm/token/').once('value'))
+  if(allTokens.exists()){
+    const data = allTokens.val()
     const keys = Object.keys(data)
     const tokens = []
-    for(var i=0;i < len(keys);i++){
+    for(var i=0;i<keys.length;i++){
       tokens.push(data[keys[i]])
     }
-    return tokens
-}
+    const response = await (admin.messaging().sendToDevice(tokens,payload))
+    if(response.error == null){
+      console.log(response.successCount)
+    }
+    await (cleanUp(response, tokens,keys))
+  }
+    res.status(304).send("Success")
+  } 
+  else{
+    res.status(401).send("Unauthorized")
+  }
+  }));
 
-function cleanup(response,tokens,keys){
+function cleanUp(response,tokens,keys){
   const tokensToRemove = {}
-  response.results.forEach(function(result,index){
+  response.results.forEach((result,index) => {
     const error = result.error
     if(error){
-      console.error('Failure sending notification to ',tokens[index],error)
-      if(error.code == 'messaging/invalid-registration-token' || error.code == 'messaging/registration-token-not-registered'){
-        tokensToRemove[`/data/fcm/tokens/${keys[index]}`] = null
-        tokensToRemove[`/data/fcm/user/${keys[index]}`] = null
-      }
+      console.error('Failure sending notification to', tokens[index], error)
+      if (error.code === 'messaging/invalid-registration-token' ||
+         error.code === 'messaging/registration-token-not-registered') {
+       tokensToRemove[`/data/fcm/token/${keys[index]}`] = null;
+     }
     }
   })
   return admin.database().ref().update(tokensToRemove)
 }
-
-async(function sendNotification(tokens,keys,payload){
-  const response = await(admin.messagin().sendToDevice(tokens,payload))
-  if(response.error == null){
-    console.log(response.successCount)
-  }
-  await(cleanup(response,tokens,keys))
-})
-
-app.use(function(req,res,next){
-  if(req.body.api_key == config.API_KEY){
-    next()
-  }
-  else{
-    next(httpErrors(403,"Forbidden"))
-  }
-})
-
-app.get("/sendnotif/play",async(function(req,res){
-  console.log("Here")
-  const allTokens = await(admin.database().ref("/data/fcm/token"))
-  const tokens = getTokens(allTokens)
-  if(tokens != null){
-    const payload = {
-      data: {
-        "type": "play"
-      }
-    }
-    await(sendNotification(tokens,Object.keys(allTokens.val()),payload))
-    res.status(203).json({
-      "response": "Notification sent"
-    })
-  }
-  else{
-    res.status(500).json({
-      "response": "No tokens present"
-    })
-  }
-}))
-
-app.get("/sendnotif/custom",async(function(req,res){
-  const allTokens = await(admin.database().ref("/data/fcm/tokens"))
-  const tokens = getTokens(allTokens)
-  if(tokens != null){ 
-    const payload = {
-      data: {
-        "heading": req.body.heading,
-        "content": req.body.content,
-        "type": "custom"  
-      }
-    }
-    await(sendNotification(tokens,Obkect.keys(allTokens.val()),payload))
-    res.status(203).json({
-      "response": "Notification sent"
-    })
-  }
-  else{
-    res.status(500).json({
-      "response": "No tokens present"
-    })
-  }
-}))
-
-app.use(function(req,res,next){
-  next(httpErrors(404,"Page not found"))
-})
-
-module.exports.api = functions.https.onRequest(app);
