@@ -16,7 +16,6 @@ app.use(bodyParser.json())
 app.use(cors())
 
 function getTokens(snapshot){
-  if(snapshot.exists()){
     const data = snapshot.val()
     const keys = Object.keys(data)
     const tokens = []
@@ -24,8 +23,6 @@ function getTokens(snapshot){
       tokens.push(data[keys[i]])
     }
     return tokens
-  }
-  return null
 }
 
 function cleanup(response,tokens,keys){
@@ -62,7 +59,7 @@ app.use(function(req,res,next){
 
 app.get("/sendnotif/play",async(function(req,res){
   console.log("Here")
-  const allTokens = await(admin.database().ref("/data/fcm/tokens"))
+  const allTokens = await(admin.database().ref("/data/fcm/token"))
   const tokens = getTokens(allTokens)
   if(tokens != null){
     const payload = {
