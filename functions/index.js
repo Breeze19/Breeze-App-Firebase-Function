@@ -3,9 +3,11 @@ const admin = require('firebase-admin');
 var async = require('asyncawait/async')
 var await = require('asyncawait/await')
 const config = require('./config.js')
+const cors = require('cors')({origin: true});
 admin.initializeApp()
 
 exports.api = functions.https.onRequest(async ((req,res) => {
+  cors(req, res, () => {});
   if(req.body.api_key == config.API_KEY){
   const payload = {
     data: {
